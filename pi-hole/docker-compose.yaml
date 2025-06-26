@@ -1,0 +1,28 @@
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    networks:
+      pihole-net:
+        ipv4_address: 10.100.102.53
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - TZ=Asia/Jerusalem
+      - PIHOLE_DNS_=1.1.1.1,1.0.0.1
+      - FTLCONF_LOCAL_IPV4=10.100.102.53
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    restart: unless-stopped
+
+networks:
+  pihole-net:
+    driver: macvlan
+    driver_opts:
+      parent: enp0s3
+    ipam:
+      config:
+        - subnet: 10.100.102.0/24
+          gateway: 10.100.102.1
+          ip_range: 10.100.102.53/32

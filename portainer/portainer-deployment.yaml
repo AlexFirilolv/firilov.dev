@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portainer
+  namespace: portainer
+  labels:
+    app.kubernetes.io/name: portainer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: portainer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: portainer
+    spec:
+      containers:
+        - name: portainer
+          image: portainer/portainer-ce:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9000
+              name: http
+            - containerPort: 9443
+              name: https
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

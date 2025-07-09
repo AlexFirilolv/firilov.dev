@@ -1,7 +1,7 @@
 # Install dependencies
 FROM node:18-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json ./
 RUN npm install
 
 # Build the application

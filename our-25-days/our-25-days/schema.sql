@@ -9,3 +9,6 @@ CREATE TABLE IF NOT EXISTS memories (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+INSERT INTO memories (day_number, release_date, title, text_content, media_url, media_type) VALUES
+(1, '2025-07-01', 'A beautiful start', 'This is a memory for day 1.', 'https://example.com/image.jpg', 'image');

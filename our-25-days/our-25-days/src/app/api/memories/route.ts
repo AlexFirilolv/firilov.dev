@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import mysql from 'mysql2/promise';
 
 const s3Client = new S3Client({
@@ -10,16 +10,25 @@ const s3Client = new S3Client({
   },
 });
 
-async function uploadToS3(file: Buffer, fileName: string) {
+async function uploadToS3(file: Buffer, fileName: string, contentType: string) {
+  // Ensure content type is an image type for direct browser display
+  let finalContentType = contentType;
+  if (!contentType || (!contentType.startsWith('image/') && !contentType.startsWith('video/'))) {
+    // Default to image/jpeg if not specified or not an image/video type
+    finalContentType = 'image/jpeg';
+  }
+
   const params = {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
-    Key: fileName,
+    Key: `${Date.now()}-${fileName}`,
     Body: file,
+    ACL: 'public-read' as ObjectCannedACL,
+    ContentType: finalContentType,
   };
 
   const command = new PutObjectCommand(params);
   await s3Client.send(command);
-  return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${fileName}`;
+  return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${params.Key}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -31,11 +40,11 @@ export async function POST(request: NextRequest) {
     const media = formData.get('media') as File;
 
     const buffer = Buffer.from(await media.arrayBuffer());
-    const mediaUrl = await uploadToS3(buffer, media.name);
+    const mediaUrl = await uploadToS3(buffer, media.name, media.type);
 
     const connection = await mysql.createConnection(process.env.DATABASE_URL!);
-    const releaseDate = new Date('2025-07-19');
-    releaseDate.setDate(releaseDate.getDate() + parseInt(day));
+    const releaseDate = new Date();
+    releaseDate.setDate(releaseDate.getDate() + (parseInt(day) - new Date().getDate()));
 
     const [result] = await connection.execute(
       'INSERT INTO memories (day_number, release_date, title, text_content, media_url, media_type) VALUES (?, ?, ?, ?, ?, ?)',
@@ -45,9 +54,43 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, result });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const err = error as Error;
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function PUT(request: NextRequest) {
+    try {
+      const formData = await request.formData();
+      const day = formData.get('day') as string;
+      const title = formData.get('title') as string;
+      const textContent = formData.get('textContent') as string;
+      const media = formData.get('media') as File | null;
+  
+      const connection = await mysql.createConnection(process.env.DATABASE_URL!);
+  
+      if (media) {
+        const buffer = Buffer.from(await media.arrayBuffer());
+        const mediaUrl = await uploadToS3(buffer, media.name, media.type);
+        await connection.execute(
+          'UPDATE memories SET title = ?, text_content = ?, media_url = ?, media_type = ? WHERE day_number = ?',
+          [title, textContent, mediaUrl, media.type.split('/')[0], day]
+        );
+      } else {
+        await connection.execute(
+          'UPDATE memories SET title = ?, text_content = ? WHERE day_number = ?',
+          [title, textContent, day]
+        );
+      }
+  
+      await connection.end();
+  
+      return NextResponse.json({ success: true });
+    } catch (error) {
+        const err = error as Error;
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+  }
 
 export async function GET() {
   try {
@@ -56,6 +99,7 @@ export async function GET() {
     await connection.end();
     return NextResponse.json(rows);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const err = error as Error;
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

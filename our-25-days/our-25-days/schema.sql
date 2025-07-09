@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS memories (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  day_number INT UNIQUE NOT NULL,
+  release_date DATE NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  text_content TEXT NOT NULL,
+  media_url VARCHAR(255) NOT NULL,
+  media_type ENUM('image', 'video', 'audio') NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface Memory {
   id: number;
@@ -142,6 +143,7 @@ export default function Admin() {
                     id="media"
                     onChange={handleFileChange}
                     className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                    accept="image/*,video/*,audio/*"
                 />
                 </div>
                 <button

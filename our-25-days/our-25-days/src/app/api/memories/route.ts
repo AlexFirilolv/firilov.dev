@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { S3Client, PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import mysql from 'mysql2/promise';
 
-const s3Client = new S3Client({
-  region: process.env.AWS_S3_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+async function getS3Client() {
+  return new S3Client({
+    region: process.env.AWS_S3_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+}
 
 async function uploadToS3(file: Buffer, fileName: string, contentType: string) {
+  const s3Client = await getS3Client();
   // Ensure content type is an image type for direct browser display
   let finalContentType = contentType;
   if (!contentType || (!contentType.startsWith('image/') && !contentType.startsWith('video/'))) {
@@ -22,7 +25,6 @@ async function uploadToS3(file: Buffer, fileName: string, contentType: string) {
     Bucket: process.env.AWS_S3_BUCKET_NAME,
     Key: `${Date.now()}-${fileName}`,
     Body: file,
-    ACL: 'public-read' as ObjectCannedACL,
     ContentType: finalContentType,
   };
 

@@ -13,6 +13,10 @@ export async function GET(request: Request, { params }: { params: { day: string 
       return NextResponse.json({ error: 'Memory not found' }, { status: 404 });
     }
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    let errorMessage = 'An unexpected error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

@@ -75,6 +75,10 @@ export default function Admin() {
 
     if (response.ok) {
         showFeedback(`Memory ${isEditing ? 'updated' : 'saved'} successfully!`);
+        // Refresh the page after successful upload to make static files available
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
     } else {
         const { error } = await response.json();
         showFeedback(`Failed to ${isEditing ? 'update' : 'save'} memory: ${error}`);

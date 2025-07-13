@@ -7,9 +7,13 @@ interface Block {
   sort_order: number;
 }
 
+interface DisplaySettings {
+  [key: string]: any;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { day, blocks }: { day: string; blocks: Block[] } = await request.json();
+    const { day, blocks, settings }: { day: string; blocks: Block[]; settings?: DisplaySettings } = await request.json();
     const connection = await mysql.createConnection(process.env.DATABASE_URL!);
     
     // Get memory ID
@@ -22,14 +26,23 @@ export async function POST(request: NextRequest) {
     // Start transaction
     await connection.beginTransaction();
 
-    // Delete existing blocks
-    await connection.execute('DELETE FROM memory_blocks WHERE memory_id = ?', [memoryId]);
+    if (blocks) {
+      // Delete existing blocks
+      await connection.execute('DELETE FROM memory_blocks WHERE memory_id = ?', [memoryId]);
 
-    // Insert new blocks
-    for (const block of blocks) {
+      // Insert new blocks
+      for (const block of blocks) {
+        await connection.execute(
+          'INSERT INTO memory_blocks (memory_id, block_type, content, sort_order) VALUES (?, ?, ?, ?)',
+          [memoryId, block.block_type, block.content, block.sort_order]
+        );
+      }
+    }
+
+    if (settings) {
       await connection.execute(
-        'INSERT INTO memory_blocks (memory_id, block_type, content, sort_order) VALUES (?, ?, ?, ?)',
-        [memoryId, block.block_type, block.content, block.sort_order]
+        'UPDATE memories SET display_settings = ? WHERE id = ?',
+        [JSON.stringify(settings), memoryId]
       );
     }
 
@@ -58,6 +71,9 @@ export async function GET() {
             [memory.id]
           );
         memory.blocks = blocks;
+        if (memory.display_settings && typeof memory.display_settings === 'string') {
+            memory.display_settings = JSON.parse(memory.display_settings);
+        }
     }
 
     await connection.end();

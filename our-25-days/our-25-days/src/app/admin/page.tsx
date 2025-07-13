@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { Block as ApiBlock } from '@/app/components/BlockRenderer';
 
 type BlockType = 'title' | 'paragraph' | 'image' | 'quote' | 'highlight';
 
@@ -14,11 +16,6 @@ interface Block {
 }
 
 // For data coming from the API
-interface ApiBlock {
-  block_type: BlockType;
-  content: string;
-}
-
 interface Memory {
   id: number;
   day_number: number;
@@ -31,6 +28,7 @@ export default function Admin() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     fetch('/api/memories')
@@ -118,7 +116,10 @@ export default function Admin() {
     });
 
     if (response.ok) {
-      showFeedback('Memory saved successfully!');
+      showFeedback('Memory saved successfully! Redirecting to preview...');
+      setTimeout(() => {
+        router.push(`/admin/preview/${day}`);
+      }, 1500);
     } else {
       const { error } = await response.json();
       showFeedback(`Failed to save memory: ${error}`);

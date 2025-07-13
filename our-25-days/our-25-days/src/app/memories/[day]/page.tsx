@@ -3,39 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-
-type BlockType = 'title' | 'paragraph' | 'image' | 'quote' | 'highlight';
-
-interface Block {
-  id: string;
-  block_type: BlockType;
-  content: string;
-}
+import { Block, BlockRenderer, DisplaySettings } from '@/app/components/BlockRenderer';
 
 interface Memory {
   id: number;
   day_number: number;
   release_date: string;
   blocks: Block[];
+  display_settings: DisplaySettings;
 }
-
-const BlockRenderer = ({ block }: { block: Block }) => {
-    switch (block.block_type) {
-      case 'title':
-        return <h1 className="text-5xl sm:text-6xl font-bold text-gray-800 my-4" style={{ fontFamily: 'Playfair Display, serif' }}>{block.content}</h1>;
-      case 'paragraph':
-        return <p className="text-lg sm:text-xl text-gray-700 leading-relaxed my-4">{block.content}</p>;
-      case 'image':
-        return <img src={block.content} alt="Memory" className="w-full h-auto rounded-xl shadow-lg my-4" />;
-      case 'quote':
-        return <blockquote className="text-xl italic text-center text-gray-600 border-l-4 border-pink-300 pl-4 my-6">{block.content}</blockquote>;
-      case 'highlight':
-        return <div className="p-4 bg-pink-100/50 rounded-lg text-pink-800 my-4">{block.content}</div>;
-      default:
-        return null;
-    }
-  };
-  
 
 export default function MemoryPage() {
   const params = useParams();
@@ -65,7 +41,7 @@ export default function MemoryPage() {
           &larr; Back to Calendar
         </Link>
         
-        {memory.blocks.map(block => <BlockRenderer key={block.id} block={block} />)}
+        {memory.blocks.map(block => <BlockRenderer key={block.id} block={block} settings={memory.display_settings} />)}
 
       </div>
     </main>

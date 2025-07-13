@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: { params: { day: string 
     const day = params.day;
     const connection = await mysql.createConnection(process.env.DATABASE_URL!);
     const [rows] = await connection.execute<MemoryRow[]>(
-      `SELECT m.day_number, m.release_date, mb.block_type, mb.content, mb.sort_order
+      `SELECT m.day_number, m.release_date, m.display_settings, mb.block_type, mb.content, mb.sort_order
        FROM memories m
        LEFT JOIN memory_blocks mb ON m.id = mb.memory_id
        WHERE m.day_number = ?
@@ -24,9 +24,19 @@ export async function GET(request: Request, { params }: { params: { day: string 
     await connection.end();
 
     if (Array.isArray(rows) && rows.length > 0) {
+      let display_settings = rows[0].display_settings;
+      if (display_settings && typeof display_settings === 'string') {
+        try {
+          display_settings = JSON.parse(display_settings);
+        } catch (e) {
+          // If parsing fails, keep it as a string or handle error
+        }
+      }
+
       const memory = {
         day_number: rows[0].day_number,
         release_date: rows[0].release_date,
+        display_settings: display_settings,
         blocks: rows.map(row => ({
           block_type: row.block_type,
           content: row.content,
